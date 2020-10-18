@@ -1,11 +1,15 @@
 package com.example.app.service;
 
 import com.example.app.entity.Record;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
@@ -20,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class RecordServiceTest {
     @Autowired
     private RecordService victim;
+
 
     @Test
     @Sql(scripts = "classpath:db/populate.sql")
@@ -93,6 +98,34 @@ class RecordServiceTest {
             expectedSize = 1;
         }
         assertEquals(expectedSize, actualSize);
+    }
+
+    @Test
+    @Sql(scripts = "classpath:db/populate.sql")
+    public void uploadFile() {
+        Record record = createRecord();
+        Gson gson = new GsonBuilder().registerTypeAdapter(LocalDate.class, new LocalDateAdapter()).create();
+        String json = gson.toJson(record);
+        json = "{ \"records\":[" + json + "]}";
+        MockMultipartFile file
+                = new MockMultipartFile(
+                "file",
+                "hello.txt",
+                MediaType.APPLICATION_JSON_VALUE,
+                json.getBytes()
+        );
+        assertTrue(victim.uploadDataFromFile(file));
+    }
+
+    private Record createRecord() {
+        Record record = new Record();
+        record.setId(0);
+        record.setFuelType("95");
+        record.setPricePerLiter(BigDecimal.valueOf(1.25));
+        record.setVolume(20);
+        record.setDate(LocalDate.now());
+        record.setDriverId(1);
+        return record;
     }
 
 }

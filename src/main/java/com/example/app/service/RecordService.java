@@ -69,7 +69,7 @@ public class RecordService {
     }
 
     //TODO write tests for this method
-    public void uploadDataFromFile(MultipartFile file) {
+    public boolean uploadDataFromFile(MultipartFile file) {
         StringBuilder sb = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
             String line;
@@ -95,6 +95,7 @@ public class RecordService {
         }
         recordRepository.saveAll(recordList);
         System.out.println(recordList);
+        return true;
     }
 
     private Function<Map.Entry<String, List<Record>>, RecordStatistics> getEntryRecordStatisticsFunction(Month key) {
