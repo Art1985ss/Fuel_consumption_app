@@ -11,7 +11,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "records")
-public class Record {
+public class Record implements Comparable<Record> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonIgnore
@@ -24,7 +24,7 @@ public class Record {
     @Positive(message = "Volume can't be negative value")
     @Column(name = "volume")
     private double volume;
-    @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "MM.dd.yyyy")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "MM.dd.yyyy")
     @Column(name = "date")
     private LocalDate date;
     @Column(name = "driver_id")
@@ -105,5 +105,14 @@ public class Record {
                 ", date=" + date +
                 ", driverId=" + driverId +
                 '}';
+    }
+
+    @Override
+    public int compareTo(Record record) {
+        int result = this.date.compareTo(record.date);
+        if (result == 0) {
+            result = this.fuelType.compareTo(record.fuelType);
+        }
+        return result;
     }
 }

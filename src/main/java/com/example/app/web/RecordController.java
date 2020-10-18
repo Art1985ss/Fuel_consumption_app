@@ -7,11 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.Month;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -67,5 +67,14 @@ public class RecordController {
     public ResponseEntity<List<RecordStatistics>> getStatistics(@RequestParam(name = "driver_id") Optional<Long> driverId) {
         return ResponseEntity.ok(recordService.getStatistics(driverId));
     }
+
+    @PostMapping("/upload")
+    public ResponseEntity<Void> uploadMultipart(@RequestParam MultipartFile file) {
+        recordService.uploadDataFromFile(file);
+        return ResponseEntity.ok().build();
+    }
+
+    //TODO make sure that validation working and covering different situations
+    //TODO add method for exception handling
 
 }

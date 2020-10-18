@@ -3,20 +3,22 @@ package com.example.app.service;
 import com.example.app.entity.Record;
 import com.example.app.entity.RecordStatistics;
 import com.example.app.repository.RecordRepository;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.Month;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.*;
 
@@ -42,7 +44,7 @@ public class RecordService {
         Function<Record, String> getMonth = record -> record.getDate().getMonth().name();
         Function<Record, BigDecimal> getTotalPrice = record ->
                 record.getPricePerLiter().multiply(BigDecimal.valueOf(record.getVolume()));
-        return records.stream()
+        return records.stream().sorted()
                 .collect(groupingBy(getMonth, mapping(getTotalPrice, reducing(BigDecimal.ZERO, BigDecimal::add))));
     }
 
@@ -50,7 +52,7 @@ public class RecordService {
         List<Record> records = getRecords(driverId);
         Predicate<Record> filterByMonth =
                 record -> record.getDate().getMonth().name().toLowerCase().equals(month.toLowerCase());
-        records = records.stream().filter(filterByMonth).collect(toList());
+        records = records.stream().filter(filterByMonth).sorted().collect(toList());
         return records;
     }
 
@@ -61,24 +63,58 @@ public class RecordService {
         records.stream()
                 .collect(groupingBy(getMonth, groupingBy(Record::getFuelType)))
                 .forEach((key, value) -> recordStatisticsList.addAll(
-                        value.entrySet().stream().map(e -> {
-                            List<Record> recordList = e.getValue();
-                            RecordStatistics recordStatistics = new RecordStatistics();
-                            recordStatistics.setMonth(key);
-                            recordStatistics.setFuelType(e.getKey());
-                            recordStatistics.setVolume(recordList.stream()
-                                    .map(Record::getVolume)
-                                    .reduce(0d, Double::sum));
-                            List<BigDecimal> pricesPerRecord = recordList.stream()
-                                    .map(r -> r.getPricePerLiter().multiply(BigDecimal.valueOf(r.getVolume())))
-                                    .collect(toList());
-                            BigDecimal totalPrice = pricesPerRecord.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
-                            recordStatistics.setAveragePrice(totalPrice.divide(BigDecimal.valueOf(pricesPerRecord.size()),
-                                    RoundingMode.HALF_EVEN));
-                            recordStatistics.setTotalPrice(totalPrice);
-                            return recordStatistics;
-                        }).collect(toList())));
+                        value.entrySet().stream().map(getEntryRecordStatisticsFunction(key)).collect(toList())));
+        Collections.sort(recordStatisticsList);
         return recordStatisticsList;
+    }
+
+    //TODO write tests for this method
+    public void uploadDataFromFile(MultipartFile file) {
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append(System.lineSeparator());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println(sb.toString());
+        JsonObject mainObject = JsonParser.parseString(sb.toString()).getAsJsonObject();
+        JsonElement records = mainObject.get("records");
+        List<Record> recordList = new ArrayList<>();
+        for (JsonElement element : records.getAsJsonArray()) {
+            JsonObject object = element.getAsJsonObject();
+            Record record = new Record();
+            record.setFuelType(object.get("fuelType").getAsString());
+            record.setVolume(object.get("volume").getAsDouble());
+            record.setPricePerLiter(object.get("pricePerLiter").getAsBigDecimal());
+            record.setDate(LocalDate.parse(object.get("date").getAsString(), DateTimeFormatter.ofPattern("MM.dd.yyyy")));
+            record.setDriverId(object.get("driverId").getAsLong());
+            recordList.add(record);
+        }
+        recordRepository.saveAll(recordList);
+        System.out.println(recordList);
+    }
+
+    private Function<Map.Entry<String, List<Record>>, RecordStatistics> getEntryRecordStatisticsFunction(Month key) {
+        return e -> {
+            List<Record> recordList = e.getValue();
+            RecordStatistics recordStatistics = new RecordStatistics();
+            recordStatistics.setMonth(key);
+            recordStatistics.setFuelType(e.getKey());
+            recordStatistics.setVolume(recordList.stream()
+                    .map(Record::getVolume)
+                    .reduce(0d, Double::sum));
+            List<BigDecimal> pricesPerRecord = recordList.stream()
+                    .map(r -> r.getPricePerLiter().multiply(BigDecimal.valueOf(r.getVolume())))
+                    .collect(toList());
+            BigDecimal totalPrice = pricesPerRecord.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+            recordStatistics.setAveragePrice(totalPrice.divide(BigDecimal.valueOf(pricesPerRecord.size()),
+                    RoundingMode.HALF_EVEN));
+            recordStatistics.setTotalPrice(totalPrice);
+            return recordStatistics;
+        };
     }
 
     private List<Record> getRecords(Optional<Long> driverId) {

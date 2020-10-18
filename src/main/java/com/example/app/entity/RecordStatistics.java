@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.Month;
 import java.util.Objects;
 
-public class RecordStatistics {
+public class RecordStatistics implements Comparable<RecordStatistics> {
     private Month month;
     private String fuelType;
     private double volume;
@@ -70,6 +70,18 @@ public class RecordStatistics {
         return "RecordStatistics{" +
                 "month=" + month +
                 ", fuelType='" + fuelType + '\'' +
+                ", volume=" + volume +
+                ", averagePrice=" + averagePrice +
+                ", totalPrice=" + totalPrice +
                 '}';
+    }
+
+    @Override
+    public int compareTo(RecordStatistics recordStatistics) {
+        int result = this.month.compareTo(recordStatistics.month);
+        if (result == 0) {
+            result = this.fuelType.compareTo(recordStatistics.fuelType);
+        }
+        return result;
     }
 }

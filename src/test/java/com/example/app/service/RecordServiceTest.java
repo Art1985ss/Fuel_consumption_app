@@ -74,4 +74,25 @@ class RecordServiceTest {
         assertEquals(1, records.size());
     }
 
+    @Test
+    @Sql(scripts = "classpath:db/populate.sql")
+    public void getStatisticsWithoutDriverId() {
+        int actualSize = victim.getStatistics(Optional.empty()).size();
+        assertEquals(2, actualSize);
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {1L, 2L})
+    @Sql(scripts = "classpath:db/populate.sql")
+    public void getStatisticsWithDriverId(long driverId) {
+        int actualSize = victim.getStatistics(Optional.of(driverId)).size();
+        int expectedSize;
+        if (driverId == 1L) {
+            expectedSize = 2;
+        } else {
+            expectedSize = 1;
+        }
+        assertEquals(expectedSize, actualSize);
+    }
+
 }
