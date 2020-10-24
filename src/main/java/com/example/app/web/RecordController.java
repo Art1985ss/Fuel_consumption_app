@@ -4,17 +4,17 @@ import com.example.app.entity.Record;
 import com.example.app.entity.RecordStatistics;
 import com.example.app.service.RecordService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("api/v1/records")
@@ -29,7 +29,7 @@ public class RecordController {
     @PostMapping(consumes = "application/json")
     public ResponseEntity<Void> save(@RequestBody @Valid Record record) {
         recordService.save(record);
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping
@@ -37,22 +37,10 @@ public class RecordController {
         return ResponseEntity.ok(recordService.getAll());
     }
 
-    @GetMapping("/new")
-    public ResponseEntity<Record> getNew() {
-        Record record = new Record();
-        record.setFuelType("D");
-        record.setPricePerLiter(new BigDecimal("1.17"));
-        record.setVolume(23);
-        record.setDriverId(3);
-        record.setDate(LocalDate.now());
-        recordService.save(record);
-        return ResponseEntity.ok(record);
-    }
 
     @GetMapping(value = "/money_spent")
     public ResponseEntity<Map<String, BigDecimal>> getMoneyPerMonth(
             @RequestParam(name = "driver_id") Optional<Long> driverId) {
-        recordService.getMoneyPerMonth(driverId);
         return ResponseEntity.ok(recordService.getMoneyPerMonth(driverId));
     }
 
@@ -74,7 +62,22 @@ public class RecordController {
         return ResponseEntity.ok().build();
     }
 
-    //TODO make sure that validation working and covering different situations
-    //TODO add method for exception handling
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> exceptionHandling(MethodArgumentNotValidException e) {
+        Map<String, String> map = new HashMap<>();
+        map.put("Error", e.getClass().getSimpleName());
+        map.put("Message", e.getBindingResult().getAllErrors().get(0).getDefaultMessage());
+        return ResponseEntity.ok(map);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<Map<String, String>> exceptionHandling(Exception e) {
+        Map<String, String> map = new HashMap<>();
+        map.put("Error", e.getClass().getSimpleName());
+        map.put("Message", e.getMessage());
+        return ResponseEntity.ok(map);
+    }
+
 
 }

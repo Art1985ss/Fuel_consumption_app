@@ -68,7 +68,6 @@ public class RecordService {
         return recordStatisticsList;
     }
 
-    //TODO write tests for this method
     public boolean uploadDataFromFile(MultipartFile file) {
         StringBuilder sb = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
@@ -94,7 +93,6 @@ public class RecordService {
             recordList.add(record);
         }
         recordRepository.saveAll(recordList);
-        System.out.println(recordList);
         return true;
     }
 
@@ -111,6 +109,7 @@ public class RecordService {
                     .map(r -> r.getPricePerLiter().multiply(BigDecimal.valueOf(r.getVolume())))
                     .collect(toList());
             BigDecimal totalPrice = pricesPerRecord.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+            //average for what? Per liter or per record?
             recordStatistics.setAveragePrice(totalPrice.divide(BigDecimal.valueOf(pricesPerRecord.size()),
                     RoundingMode.HALF_EVEN));
             recordStatistics.setTotalPrice(totalPrice);

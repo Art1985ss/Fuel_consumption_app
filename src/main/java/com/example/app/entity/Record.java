@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,17 +17,22 @@ public class Record implements Comparable<Record> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonIgnore
     private long id;
+    @NotNull(message = "Please provide fuel type for the record.")
     @Column(name = "fuel_type")
     private String fuelType;
+    @NotNull(message = "Please provide price per liter for the fuel")
     @Positive(message = "Price can't be negative value")
     @Column(name = "price")
     private BigDecimal pricePerLiter;
+    @NotNull(message = "Please provide volume for the record")
     @Positive(message = "Volume can't be negative value")
     @Column(name = "volume")
     private double volume;
+    @NotNull(message = "Please provide date for the record")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "MM.dd.yyyy")
     @Column(name = "date")
     private LocalDate date;
+    @NotNull(message = "Please provide driver id for the record")
     @Column(name = "driver_id")
     private long driverId;
 
