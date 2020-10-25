@@ -101,17 +101,6 @@ public class Record implements Comparable<Record> {
         return Objects.hash(fuelType, pricePerLiter, volume, date, driverId);
     }
 
-    @Override
-    public String toString() {
-        return "Record{" +
-                "id=" + id +
-                ", fuelType='" + fuelType + '\'' +
-                ", pricePerLiter=" + pricePerLiter +
-                ", volume=" + volume +
-                ", date=" + date +
-                ", driverId=" + driverId +
-                '}';
-    }
 
     @Override
     public int compareTo(Record record) {

@@ -65,16 +65,6 @@ public class RecordStatistics implements Comparable<RecordStatistics> {
         return Objects.hash(month, fuelType);
     }
 
-    @Override
-    public String toString() {
-        return "RecordStatistics{" +
-                "month=" + month +
-                ", fuelType='" + fuelType + '\'' +
-                ", volume=" + volume +
-                ", averagePrice=" + averagePrice +
-                ", totalPrice=" + totalPrice +
-                '}';
-    }
 
     @Override
     public int compareTo(RecordStatistics recordStatistics) {
